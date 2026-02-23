@@ -94,17 +94,36 @@ def run_app():
             "Esta función extrae datos de sitios web configurados y actualiza el inventario. Asegúrate de que la estructura del sitio web no haya cambiado para obtener resultados precisos."
         )
 
-        col_site, col_action = st.columns([4, 1])
-        with col_site:
-            site_name = st.selectbox("Sitio", list(SITE_CONFIGS.keys()), index=0)
+        st.subheader("Sitios disponibles")
+        st.caption("Haz clic en 'Extraer' para el sitio que quieras actualizar.")
 
-        with col_action:
-            st.markdown("###")
-            run_extract = st.button("🔄 Extrayer", use_container_width=True)
+        engine_choice = st.selectbox(
+            "Motor de scraping (por ejecución)",
+            ["Auto", "Playwright", "Requests"],
+            index=0,
+        )
 
-        if run_extract:
-            with st.spinner("Extrayendo datos del sitio web..."):
-                properties = scrape_properties(site_name=site_name)
+        sitio_seleccionado = None
+        for sitio in sorted(SITE_CONFIGS.keys()):
+            row_left, row_right = st.columns([4, 1])
+            with row_left:
+                st.markdown(f"**{sitio}**")
+            with row_right:
+                if st.button("🔄 Extraer", key=f"extraer_{sitio}", use_container_width=True):
+                    sitio_seleccionado = sitio
+
+        if sitio_seleccionado:
+            engine_override = None
+            if engine_choice == "Playwright":
+                engine_override = "playwright"
+            elif engine_choice == "Requests":
+                engine_override = "requests"
+
+            with st.spinner(f"Extrayendo datos de {sitio_seleccionado}..."):
+                properties = scrape_properties(
+                    site_name=sitio_seleccionado,
+                    scraper_engine_override=engine_override,
+                )
 
             if properties:
                 st.success(f"✅ Encontre {len(properties)} carros!")
